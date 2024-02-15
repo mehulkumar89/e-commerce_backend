@@ -1,0 +1,108 @@
+const Order = require('../models/Order');
+const Cart = require('../models/Cart');
+const User = require('../models/User');
+const Razorpay = require('razorpay');
+const asyncHandler = require('express-async-handler');
+
+const { validatePaymentVerification } = require('../utils/razorPay');
+require('dotenv').config();
+
+
+module.exports.createRazorPayOrder = asyncHandler(async (req, res) => {
+  const { userId, cartId } = req.body;
+  
+  try {
+  const userCart = await Cart.findById(cartId);
+  const cartUserId = userCart.userId;
+  
+  if (cartUserId == userId) {
+    const amountValue = userCart.bill * 100;
+    const items = userCart.items;
+
+    let rzp = new Razorpay({
+      key_id: process.env.RAZOR_PAY_ID,
+      key_secret: process.env.RAZOR_PAY_SECRET
+    });
+      rzp.orders
+        .create({
+          amount: amountValue,
+          currency: 'INR',
+          receipt: 'recipt#1',
+          notes: {
+            key1: 'value3',
+            key2: 'value4'
+          }
+        })
+        .then(data => {
+          {
+            res.json(data);
+            Order.create({
+              _id: data.id,
+              userId,
+              items,
+              bill: amountValue,
+              status: 'Processing'
+            });
+          }
+        });
+    }
+    else{
+      res.send("hi");
+    }
+  } catch (err) {
+      res.status(500).json({
+        message:err
+      });
+    }
+    
+  });
+
+module.exports.verifyRazorpayPayment = asyncHandler(async (req, res) => {
+  const { order_id } = req.body;
+
+  let verifiedPayment = validatePaymentVerification(
+    { order_id: order_id, payment_id: req.body.razorpay_payment_id },
+    req.body.razorpay_signature,
+    process.env.RAZOR_PAY_SECRET
+  );
+  if (verifiedPayment.isValid) {
+    res.json(verifiedPayment);
+    await Order.updateOne(
+      { _id: order_id },
+      {
+        $set: {
+          status: 'Success'
+        }
+      }
+    );
+  } else {
+    await Order.updateOne(
+      { _id: req.body.error.metadata.order_id },
+      {
+        $set: {
+          status: 'Failed'
+        }
+      }
+    );
+    res.json(verifiedPayment);
+  }
+});
+
+module.exports.getOrders =asyncHandler(async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const orders = await Order.find({ userId });
+    res.status(201).json(orders);
+  } catch (err) {
+    res.send(500).send(err);
+  }
+});
+module.exports.successOrder = asyncHandler(async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findOne({ _id: orderId });
+    res.json(order);
+  } catch (err) {
+    res.send(500);
+  }
+});
