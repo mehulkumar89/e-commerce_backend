@@ -6,16 +6,26 @@ const authRoutes = require('./routes/auth');
 const itemRoutes = require('./routes/item');
 const cartRoutes = require('./routes/cart');
 const orderRoutes = require('./routes/order');
+const session=require('express-session');
 const helmet = require('helmet');
 require('dotenv').config();
 
 const app = express();
 
 app.use(helmet());
+app.use(session({
+ cookie:{
+  httpOnly:true,
+  secure:true,
+  sameSite:'none'
+ }
+}))
 app.use(express.json());
+app.use(bodyParser.urlencoded({extended:true}))
 app.use(cors({
   origin:'*',
-  credentials:true
+  credentials:true,
+  exposedHeaders:['Set-Cookie']
 }));
 app.use('/api', authRoutes);
 app.use('/api', itemRoutes);
