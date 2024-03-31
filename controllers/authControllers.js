@@ -36,15 +36,16 @@ module.exports.loginUser = asyncHandler(async (req, res) => {
 
   //check if the user exist in db
   const user = await User.findOne({ email });
-
+  
   //validate password
   if (user && (await user.matchPassword(password))) {
+    const userToken=generateToken(user._id)
+    res.cookie("token",userToken)
     res.json({
       _id: user._id,
       name: user.name,
       email: user.email,
       api_key:user.api_key,
-      userToken: generateToken(user._id)
     });
   } else {
     res.status(401);
