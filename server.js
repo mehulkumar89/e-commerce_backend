@@ -14,6 +14,10 @@ const app = express();
 
 app.use(helmet());
 app.use(session({
+  key: 'id',
+  secret: process.env.JWT_SECRET,
+  resave: false,
+  saveUninitialized: false,
  cookie:{
   httpOnly:true,
   secure:true,
