@@ -40,7 +40,12 @@ module.exports.loginUser = asyncHandler(async (req, res) => {
   //validate password
   if (user && (await user.matchPassword(password))) {
     const userToken=generateToken(user._id)
-    res.cookie("token",userToken)
+    res.cookie("token",userToken,{
+      httpOnly:true,
+      secure:true,
+      path:'/',
+      sameSite:'none'
+    })
     res.json({
       _id: user._id,
       name: user.name,
