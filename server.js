@@ -21,8 +21,9 @@ app.use(session({
  cookie:{
   httpOnly:true,
   secure:true,
-  sameSite:'none'
- }
+  sameSite:'none',
+   maxAge:1000*60*60*24*7,
+ },
 }))
 app.use(express.json());
 app.use(bodyParser.urlencoded({extended:true}))
