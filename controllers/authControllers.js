@@ -44,7 +44,8 @@ module.exports.loginUser = asyncHandler(async (req, res) => {
       httpOnly:true,
       secure:true,
       path:'/',
-      sameSite:'none'
+      sameSite:'none',
+      maxAge:1000*60*60*24*7
     })
     res.json({
       _id: user._id,
